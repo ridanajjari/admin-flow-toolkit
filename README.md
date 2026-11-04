@@ -92,5 +92,9 @@ sf project deploy start --source-dir flows --target-org my-org
 
 ## Author
 
-Built by [Your Name] — Salesforce Developer & Administrator  
-[LinkedIn](#) · [Trailhead](#)
+**Rida Najjari** — Salesforce Consultant, Developer & Administrator
+
+4x Salesforce Certified: Platform Administrator · Platform App Builder · Platform Developer I · Associate
+
+- LinkedIn: [linkedin.com/in/rida-najjari](https://www.linkedin.com/in/rida-najjari)
+- GitHub: [github.com/ridanajjari](https://github.com/ridanajjari)
