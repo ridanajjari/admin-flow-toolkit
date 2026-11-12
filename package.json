@@ -1,0 +1,23 @@
+{
+  "name": "admin-flow-toolkit",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Salesforce Flows for common admin automation scenarios",
+  "scripts": {
+    "lint": "eslint --no-error-on-unmatched-pattern \"**/{aura,lwc}/**/*.js\"",
+    "prettier": "prettier --write \"force-app/**/*.{cls,cmp,component,css,html,js,json,page,trigger,xml,yaml,yml}\" \"config/**/*.json\" \"*.{js,json}\" README.md",
+    "prettier:verify": "prettier --check \"force-app/**/*.{cls,cmp,component,css,html,js,json,page,trigger,xml,yaml,yml}\" \"config/**/*.json\" \"*.{js,json}\" README.md"
+  },
+  "devDependencies": {
+    "@lwc/eslint-plugin-lwc": "^3.1.0",
+    "@prettier/plugin-xml": "^3.4.1",
+    "@salesforce/eslint-config-lwc": "^4.0.0",
+    "@salesforce/eslint-plugin-aura": "^3.0.0",
+    "@salesforce/eslint-plugin-lightning": "^2.0.0",
+    "eslint": "^9.29.0",
+    "eslint-plugin-import": "^2.31.0",
+    "eslint-plugin-jest": "^28.14.0",
+    "prettier": "^3.5.3",
+    "prettier-plugin-apex": "^2.2.6"
+  }
+}

@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Flow xmlns="http://soap.sforce.com/2006/04/metadata">
+    <actionCalls>
+        <name>Notify_Admin_Of_Fault</name>
+        <label>Notify Admin Of Fault</label>
+        <locationX>440</locationX>
+        <locationY>300</locationY>
+        <actionName>emailSimple</actionName>
+        <actionType>emailSimple</actionType>
+        <flowTransactionModel>CurrentTransaction</flowTransactionModel>
+        <inputParameters>
+            <name>emailAddresses</name>
+            <value>
+                <elementReference>$Label.Flow_Fault_Notification_Email</elementReference>
+            </value>
+        </inputParameters>
+        <inputParameters>
+            <name>emailSubject</name>
+            <value>
+                <stringValue>Flow fault: Account_Welcome_Email_On_Creation</stringValue>
+            </value>
+        </inputParameters>
+        <inputParameters>
+            <name>emailBody</name>
+            <value>
+                <stringValue>Flow Account_Welcome_Email_On_Creation failed for record {!$Record.Id}.
+
+Fault message: {!$Flow.FaultMessage}</stringValue>
+            </value>
+        </inputParameters>
+        <nameSegment>emailSimple</nameSegment>
+    </actionCalls>
+    <actionCalls>
+        <name>Send_Welcome_Email</name>
+        <label>Send Welcome Email</label>
+        <locationX>176</locationX>
+        <locationY>200</locationY>
+        <actionName>emailSimple</actionName>
+        <actionType>emailSimple</actionType>
+        <faultConnector>
+            <targetReference>Notify_Admin_Of_Fault</targetReference>
+        </faultConnector>
+        <flowTransactionModel>CurrentTransaction</flowTransactionModel>
+        <inputParameters>
+            <name>emailAddresses</name>
+            <value>
+                <elementReference>$Record.Owner.Email</elementReference>
+            </value>
+        </inputParameters>
+        <inputParameters>
+            <name>emailSubject</name>
+            <value>
+                <stringValue>New Account Created: {!$Record.Name}</stringValue>
+            </value>
+        </inputParameters>
+        <inputParameters>
+            <name>emailBody</name>
+            <value>
+                <stringValue>Hi {!$Record.Owner.FirstName},
+
+A new Account has been created and assigned to you.
+
+Account Name : {!$Record.Name}
+Industry     : {!$Record.Industry}
+Phone        : {!$Record.Phone}
+Website      : {!$Record.Website}
+
+Please review the record and complete any missing information.
+
+This is an automated message from Salesforce.</stringValue>
+            </value>
+        </inputParameters>
+        <nameSegment>emailSimple</nameSegment>
+    </actionCalls>
+    <apiVersion>68.0</apiVersion>
+    <areMetricsLoggedToDataCloud>false</areMetricsLoggedToDataCloud>
+    <description>Sends a welcome email to the Account Owner when a new Account record is created. Faults are emailed to the address in the Flow_Fault_Notification_Email custom label.</description>
+    <environments>Default</environments>
+    <label>Account — Welcome Email on Creation</label>
+    <processType>AutoLaunchedFlow</processType>
+    <start>
+        <locationX>50</locationX>
+        <locationY>0</locationY>
+        <connector>
+            <targetReference>Send_Welcome_Email</targetReference>
+        </connector>
+        <object>Account</object>
+        <recordTriggerType>Create</recordTriggerType>
+        <triggerType>RecordAfterSave</triggerType>
+    </start>
+    <status>Draft</status>
+</Flow>

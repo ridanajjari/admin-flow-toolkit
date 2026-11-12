@@ -1,0 +1,172 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Flow xmlns="http://soap.sforce.com/2006/04/metadata">
+    <actionCalls>
+        <name>Notify_Admin_Of_Fault</name>
+        <label>Notify Admin Of Fault</label>
+        <locationX>440</locationX>
+        <locationY>400</locationY>
+        <actionName>emailSimple</actionName>
+        <actionType>emailSimple</actionType>
+        <flowTransactionModel>CurrentTransaction</flowTransactionModel>
+        <inputParameters>
+            <name>emailAddresses</name>
+            <value>
+                <elementReference>$Label.Flow_Fault_Notification_Email</elementReference>
+            </value>
+        </inputParameters>
+        <inputParameters>
+            <name>emailSubject</name>
+            <value>
+                <stringValue>Flow fault: Lead_Inactivity_Alert_To_Owner</stringValue>
+            </value>
+        </inputParameters>
+        <inputParameters>
+            <name>emailBody</name>
+            <value>
+                <stringValue>Flow Lead_Inactivity_Alert_To_Owner failed for record {!$Record.Id}.
+
+Fault message: {!$Flow.FaultMessage}</stringValue>
+            </value>
+        </inputParameters>
+        <nameSegment>emailSimple</nameSegment>
+    </actionCalls>
+    <actionCalls>
+        <name>Send_Inactivity_Alert</name>
+        <label>Send Inactivity Alert</label>
+        <locationX>176</locationX>
+        <locationY>300</locationY>
+        <actionName>emailSimple</actionName>
+        <actionType>emailSimple</actionType>
+        <connector>
+            <targetReference>Stamp_Last_Inactivity_Alert</targetReference>
+        </connector>
+        <faultConnector>
+            <targetReference>Notify_Admin_Of_Fault</targetReference>
+        </faultConnector>
+        <flowTransactionModel>CurrentTransaction</flowTransactionModel>
+        <inputParameters>
+            <name>emailAddresses</name>
+            <value>
+                <elementReference>$Record.Owner:User.Email</elementReference>
+            </value>
+        </inputParameters>
+        <inputParameters>
+            <name>emailSubject</name>
+            <value>
+                <stringValue>Lead Going Cold — {!$Record.FirstName} {!$Record.LastName} at {!$Record.Company}</stringValue>
+            </value>
+        </inputParameters>
+        <inputParameters>
+            <name>emailBody</name>
+            <value>
+                <stringValue>Hi {!$Record.Owner:User.FirstName},
+
+This lead has had no activity in the past 7 days:
+
+Name          : {!$Record.FirstName} {!$Record.LastName}
+Company       : {!$Record.Company}
+Last Activity : {!$Record.LastActivityDate} (blank = no activity logged since creation)
+
+Please log a call, send an email, or update the Lead status.
+
+This is an automated reminder from Salesforce.</stringValue>
+            </value>
+        </inputParameters>
+        <nameSegment>emailSimple</nameSegment>
+    </actionCalls>
+    <apiVersion>68.0</apiVersion>
+    <areMetricsLoggedToDataCloud>false</areMetricsLoggedToDataCloud>
+    <decisions>
+        <name>Is_Due_For_Alert</name>
+        <label>Due For Alert?</label>
+        <locationX>176</locationX>
+        <locationY>200</locationY>
+        <defaultConnectorLabel>Not Due</defaultConnectorLabel>
+        <rules>
+            <name>Due</name>
+            <conditionLogic>and</conditionLogic>
+            <conditions>
+                <leftValueReference>Is_Inactive_And_Not_Recently_Alerted</leftValueReference>
+                <operator>EqualTo</operator>
+                <rightValue>
+                    <booleanValue>true</booleanValue>
+                </rightValue>
+            </conditions>
+            <conditions>
+                <leftValueReference>$Record.Owner:User.Email</leftValueReference>
+                <operator>IsNull</operator>
+                <rightValue>
+                    <booleanValue>false</booleanValue>
+                </rightValue>
+            </conditions>
+            <connector>
+                <targetReference>Send_Inactivity_Alert</targetReference>
+            </connector>
+            <label>Due</label>
+        </rules>
+    </decisions>
+    <description>Runs daily. For each open, unconverted Lead owned by a user: if there has been no activity for 7+ days (CreatedDate is used when LastActivityDate is blank) and no alert was sent in the last 7 days, emails the owner and stamps Last_Inactivity_Alert__c. Queue-owned Leads are skipped. Faults are emailed to the address in the Flow_Fault_Notification_Email custom label.</description>
+    <environments>Default</environments>
+    <formulas>
+        <name>Is_Inactive_And_Not_Recently_Alerted</name>
+        <dataType>Boolean</dataType>
+        <expression>IF(ISBLANK({!$Record.LastActivityDate}), DATEVALUE({!$Record.CreatedDate}), {!$Record.LastActivityDate}) &lt;= TODAY() - 7
+&amp;&amp; (ISBLANK({!$Record.Last_Inactivity_Alert__c}) || {!$Record.Last_Inactivity_Alert__c} &lt;= TODAY() - 7)</expression>
+    </formulas>
+    <label>Lead — Inactivity Alert After 7 Days</label>
+    <processType>AutoLaunchedFlow</processType>
+    <recordUpdates>
+        <name>Stamp_Last_Inactivity_Alert</name>
+        <label>Stamp Last Inactivity Alert</label>
+        <locationX>176</locationX>
+        <locationY>400</locationY>
+        <faultConnector>
+            <targetReference>Notify_Admin_Of_Fault</targetReference>
+        </faultConnector>
+        <filterLogic>and</filterLogic>
+        <filters>
+            <field>Id</field>
+            <operator>EqualTo</operator>
+            <value>
+                <elementReference>$Record.Id</elementReference>
+            </value>
+        </filters>
+        <inputAssignments>
+            <field>Last_Inactivity_Alert__c</field>
+            <value>
+                <elementReference>$Flow.CurrentDate</elementReference>
+            </value>
+        </inputAssignments>
+        <object>Lead</object>
+    </recordUpdates>
+    <start>
+        <locationX>50</locationX>
+        <locationY>0</locationY>
+        <connector>
+            <targetReference>Is_Due_For_Alert</targetReference>
+        </connector>
+        <filterLogic>and</filterLogic>
+        <filters>
+            <field>IsConverted</field>
+            <operator>EqualTo</operator>
+            <value>
+                <booleanValue>false</booleanValue>
+            </value>
+        </filters>
+        <filters>
+            <field>Status</field>
+            <operator>NotEqualTo</operator>
+            <value>
+                <stringValue>Closed - Not Converted</stringValue>
+            </value>
+        </filters>
+        <object>Lead</object>
+        <schedule>
+            <frequency>Daily</frequency>
+            <startDate>2026-11-13</startDate>
+            <startTime>09:00:00.000Z</startTime>
+        </schedule>
+        <triggerType>Scheduled</triggerType>
+    </start>
+    <status>Draft</status>
+</Flow>
