@@ -4,7 +4,9 @@
     <description>Approval state of the Opportunity. The Opportunity_Approval_Reminder flow emails the owner while this is Pending for more than 48 hours.</description>
     <label>Approval Status</label>
     <required>false</required>
+    <trackFeedHistory>false</trackFeedHistory>
     <trackHistory>false</trackHistory>
+    <trackTrending>false</trackTrending>
     <type>Picklist</type>
     <valueSet>
         <restricted>true</restricted>
