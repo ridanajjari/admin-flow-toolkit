@@ -4,6 +4,8 @@
     <description>When the Opportunity was submitted for approval. Used by the Opportunity_Approval_Reminder flow to find approvals pending for more than 48 hours.</description>
     <label>Submitted For Approval Date</label>
     <required>false</required>
+    <trackFeedHistory>false</trackFeedHistory>
     <trackHistory>false</trackHistory>
+    <trackTrending>false</trackTrending>
     <type>DateTime</type>
 </CustomField>
