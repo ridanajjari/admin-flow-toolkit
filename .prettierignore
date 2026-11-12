@@ -1,0 +1,15 @@
+# List files or directories below to ignore them when running prettier
+# More information: https://prettier.io/docs/en/ignore.html
+#
+
+**/staticresources/**
+.localdevserver
+.sfdx
+.sf
+.vscode
+
+coverage/
+package-lock.json
+
+# Metadata XML is committed exactly as retrieved from the org (sf project retrieve start)
+force-app/**/*.xml
