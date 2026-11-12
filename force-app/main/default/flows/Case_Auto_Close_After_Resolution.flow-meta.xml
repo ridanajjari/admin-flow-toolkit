@@ -1,63 +1,42 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!--
-    FLOW: Case Auto-Close After Resolution
-    TRIGGER: When a Case Status is changed to "Resolved"
-    ACTION: Waits 72 hours, then sets Status to "Closed" if it's still "Resolved"
-    TYPE: Record-Triggered Flow (After Save, Update)
--->
 <Flow xmlns="http://soap.sforce.com/2006/04/metadata">
-    <apiVersion>68.0</apiVersion>
-    <label>Case — Auto-Close 72h After Resolution</label>
-    <status>Active</status>
-    <description>Automatically closes a Case 72 hours after it is marked as Resolved, if the customer has not reopened it.</description>
-    <processType>AutoLaunchedFlow</processType>
-    <triggerType>RecordAfterSave</triggerType>
-    <recordTriggerType>Update</recordTriggerType>
-    <objectType>Case</objectType>
-
-    <start>
-        <locationX>176</locationX>
-        <locationY>48</locationY>
-        <connector>
-            <targetReference>Wait_72_Hours</targetReference>
-        </connector>
-        <filterLogic>and</filterLogic>
-        <filters>
-            <field>Status</field>
-            <operator>EqualTo</operator>
+    <actionCalls>
+        <name>Notify_Admin_Of_Fault</name>
+        <label>Notify Admin Of Fault</label>
+        <locationX>440</locationX>
+        <locationY>400</locationY>
+        <actionName>emailSimple</actionName>
+        <actionType>emailSimple</actionType>
+        <flowTransactionModel>CurrentTransaction</flowTransactionModel>
+        <inputParameters>
+            <name>emailAddresses</name>
             <value>
-                <stringValue>Resolved</stringValue>
+                <elementReference>$Label.Flow_Fault_Notification_Email</elementReference>
             </value>
-        </filters>
-        <object>Case</object>
-        <recordTriggerType>Update</recordTriggerType>
-        <triggerType>RecordAfterSave</triggerType>
-    </start>
+        </inputParameters>
+        <inputParameters>
+            <name>emailSubject</name>
+            <value>
+                <stringValue>Flow fault: Case_Auto_Close_After_Resolution</stringValue>
+            </value>
+        </inputParameters>
+        <inputParameters>
+            <name>emailBody</name>
+            <value>
+                <stringValue>Flow Case_Auto_Close_After_Resolution failed for record {!$Record.Id}.
 
-    <waits>
-        <name>Wait_72_Hours</name>
-        <label>Wait 72 Hours</label>
-        <locationX>176</locationX>
-        <locationY>168</locationY>
-        <waitEvents>
-            <name>After_72_Hours</name>
-            <conditionLogic>and</conditionLogic>
-            <connector>
-                <targetReference>Check_Still_Resolved</targetReference>
-            </connector>
-            <eventType>AlarmEvent</eventType>
-            <label>72 Hours After Resolution</label>
-            <offset>72</offset>
-            <offsetUnit>Hours</offsetUnit>
-            <resumeDate>$Record.LastModifiedDate</resumeDate>
-        </waitEvents>
-    </waits>
-
+Fault message: {!$Flow.FaultMessage}</stringValue>
+            </value>
+        </inputParameters>
+        <nameSegment>emailSimple</nameSegment>
+    </actionCalls>
+    <apiVersion>68.0</apiVersion>
+    <areMetricsLoggedToDataCloud>false</areMetricsLoggedToDataCloud>
     <decisions>
         <name>Check_Still_Resolved</name>
         <label>Still Resolved?</label>
         <locationX>176</locationX>
-        <locationY>288</locationY>
+        <locationY>200</locationY>
         <defaultConnectorLabel>Status Changed — Skip</defaultConnectorLabel>
         <rules>
             <name>Still_Resolved</name>
@@ -75,18 +54,31 @@
             <label>Still Resolved</label>
         </rules>
     </decisions>
-
+    <description>When a Case is updated to Status = Resolved, a scheduled path runs 72 hours later and sets Status = Closed if the Case is still Resolved. Requires a &quot;Resolved&quot; value in the Case Status picklist. Faults are emailed to the address in the Flow_Fault_Notification_Email custom label.</description>
+    <environments>Default</environments>
+    <label>Case — Auto-Close 72h After Resolution</label>
+    <processType>AutoLaunchedFlow</processType>
     <recordUpdates>
         <name>Close_The_Case</name>
         <label>Close The Case</label>
         <locationX>176</locationX>
-        <locationY>408</locationY>
+        <locationY>300</locationY>
+        <faultConnector>
+            <targetReference>Notify_Admin_Of_Fault</targetReference>
+        </faultConnector>
         <filterLogic>and</filterLogic>
         <filters>
             <field>Id</field>
             <operator>EqualTo</operator>
             <value>
                 <elementReference>$Record.Id</elementReference>
+            </value>
+        </filters>
+        <filters>
+            <field>Status</field>
+            <operator>EqualTo</operator>
+            <value>
+                <stringValue>Resolved</stringValue>
             </value>
         </filters>
         <inputAssignments>
@@ -97,4 +89,31 @@
         </inputAssignments>
         <object>Case</object>
     </recordUpdates>
+    <start>
+        <locationX>50</locationX>
+        <locationY>0</locationY>
+        <doesRequireRecordChangedToMeetCriteria>true</doesRequireRecordChangedToMeetCriteria>
+        <filterLogic>and</filterLogic>
+        <filters>
+            <field>Status</field>
+            <operator>EqualTo</operator>
+            <value>
+                <stringValue>Resolved</stringValue>
+            </value>
+        </filters>
+        <object>Case</object>
+        <recordTriggerType>Update</recordTriggerType>
+        <scheduledPaths>
+            <name>X72_Hours_After_Resolved</name>
+            <connector>
+                <targetReference>Check_Still_Resolved</targetReference>
+            </connector>
+            <label>72 Hours After Resolved</label>
+            <offsetNumber>72</offsetNumber>
+            <offsetUnit>Hours</offsetUnit>
+            <timeSource>RecordTriggerEvent</timeSource>
+        </scheduledPaths>
+        <triggerType>RecordAfterSave</triggerType>
+    </start>
+    <status>Draft</status>
 </Flow>
