@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Last_Inactivity_Alert__c</fullName>
+    <description>Date the Lead_Inactivity_Alert_To_Owner flow last emailed the owner about this Lead. Prevents a new alert more often than every 7 days.</description>
+    <label>Last Inactivity Alert</label>
+    <required>false</required>
+    <trackFeedHistory>false</trackFeedHistory>
+    <trackHistory>false</trackHistory>
+    <type>Date</type>
+</CustomField>
