@@ -1,84 +1,33 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!--
-    FLOW: Contact Duplicate Check Before Save
-    TRIGGER: Before a Contact is created
-    ACTION: Checks if a Contact with the same Email already exists.
-            If yes, shows a validation error and blocks the save.
-    TYPE: Record-Triggered Flow (Before Save, Insert only)
--->
 <Flow xmlns="http://soap.sforce.com/2006/04/metadata">
     <apiVersion>68.0</apiVersion>
-    <label>Contact — Duplicate Email Check Before Save</label>
-    <status>Active</status>
-    <description>Prevents saving a new Contact if another Contact with the same email address already exists in the org.</description>
-    <processType>AutoLaunchedFlow</processType>
-    <triggerType>RecordBeforeSave</triggerType>
-    <recordTriggerType>Create</recordTriggerType>
-    <objectType>Contact</objectType>
-
-    <start>
+    <areMetricsLoggedToDataCloud>false</areMetricsLoggedToDataCloud>
+    <customErrors>
+        <name>Show_Duplicate_Error</name>
+        <label>Show Duplicate Error</label>
         <locationX>176</locationX>
-        <locationY>48</locationY>
-        <connector>
-            <targetReference>Check_Email_Is_Not_Blank</targetReference>
-        </connector>
-        <filterLogic>and</filterLogic>
-        <object>Contact</object>
-        <recordTriggerType>Create</recordTriggerType>
-        <triggerType>RecordBeforeSave</triggerType>
-    </start>
-
-    <decisions>
-        <name>Check_Email_Is_Not_Blank</name>
-        <label>Email Is Not Blank?</label>
-        <locationX>176</locationX>
-        <locationY>168</locationY>
-        <defaultConnectorLabel>No Email — Skip</defaultConnectorLabel>
-        <rules>
-            <name>Email_Provided</name>
-            <conditionLogic>and</conditionLogic>
-            <conditions>
-                <leftValueReference>$Record.Email</leftValueReference>
-                <operator>IsNull</operator>
-                <rightValue>
-                    <booleanValue>false</booleanValue>
-                </rightValue>
-            </conditions>
-            <connector>
-                <targetReference>Find_Existing_Contact_With_Same_Email</targetReference>
-            </connector>
-            <label>Email provided</label>
-        </rules>
-    </decisions>
-
-    <recordLookups>
-        <name>Find_Existing_Contact_With_Same_Email</name>
-        <label>Find Existing Contact With Same Email</label>
-        <locationX>176</locationX>
-        <locationY>288</locationY>
-        <connector>
-            <targetReference>Is_Duplicate</targetReference>
-        </connector>
-        <filterLogic>and</filterLogic>
-        <filters>
-            <field>Email</field>
-            <operator>EqualTo</operator>
-            <value>
-                <elementReference>$Record.Email</elementReference>
-            </value>
-        </filters>
-        <getFirstRecordOnly>true</getFirstRecordOnly>
-        <object>Contact</object>
-        <outputReference>Existing_Contact</outputReference>
-        <queriedFields>Id</queriedFields>
-        <queriedFields>Name</queriedFields>
-    </recordLookups>
-
+        <locationY>500</locationY>
+        <customErrorMessages>
+            <errorMessage>A Contact with this email address already exists: {!Existing_Contact.Name}. Please search for the existing record instead of creating a duplicate.</errorMessage>
+            <fieldSelection>Email</fieldSelection>
+            <isFieldError>true</isFieldError>
+        </customErrorMessages>
+    </customErrors>
+    <customErrors>
+        <name>Show_Lookup_Fault</name>
+        <label>Show Lookup Fault</label>
+        <locationX>440</locationX>
+        <locationY>300</locationY>
+        <customErrorMessages>
+            <errorMessage>The duplicate email check could not run: {!$Flow.FaultMessage}</errorMessage>
+            <isFieldError>false</isFieldError>
+        </customErrorMessages>
+    </customErrors>
     <decisions>
         <name>Is_Duplicate</name>
         <label>Duplicate Found?</label>
         <locationX>176</locationX>
-        <locationY>408</locationY>
+        <locationY>400</locationY>
         <defaultConnectorLabel>No Duplicate</defaultConnectorLabel>
         <rules>
             <name>Duplicate_Exists</name>
@@ -96,19 +45,54 @@
             <label>Duplicate exists</label>
         </rules>
     </decisions>
-
-    <customErrors>
-        <name>Show_Duplicate_Error</name>
-        <label>Show Duplicate Error</label>
-        <locationX>440</locationX>
-        <locationY>408</locationY>
-        <customErrorMessages>
-            <errorMessage>A Contact with this email address already exists: {!Existing_Contact.Name}. Please search for the existing record instead of creating a duplicate.</errorMessage>
-            <isFieldError>true</isFieldError>
-            <fieldSelection>Email</fieldSelection>
-        </customErrorMessages>
-    </customErrors>
-
+    <description>Before-save check that blocks creating a Contact when another Contact already has the same email address (exact match, insert only). If the lookup faults, the save is blocked and the fault message is shown.</description>
+    <environments>Default</environments>
+    <label>Contact — Duplicate Email Check Before Save</label>
+    <processType>AutoLaunchedFlow</processType>
+    <recordLookups>
+        <name>Find_Existing_Contact_With_Same_Email</name>
+        <label>Find Existing Contact With Same Email</label>
+        <locationX>176</locationX>
+        <locationY>200</locationY>
+        <assignNullValuesIfNoRecordsFound>true</assignNullValuesIfNoRecordsFound>
+        <connector>
+            <targetReference>Is_Duplicate</targetReference>
+        </connector>
+        <faultConnector>
+            <targetReference>Show_Lookup_Fault</targetReference>
+        </faultConnector>
+        <filterLogic>and</filterLogic>
+        <filters>
+            <field>Email</field>
+            <operator>EqualTo</operator>
+            <value>
+                <elementReference>$Record.Email</elementReference>
+            </value>
+        </filters>
+        <object>Contact</object>
+        <outputReference>Existing_Contact</outputReference>
+        <queriedFields>Id</queriedFields>
+        <queriedFields>Name</queriedFields>
+    </recordLookups>
+    <start>
+        <locationX>50</locationX>
+        <locationY>0</locationY>
+        <connector>
+            <targetReference>Find_Existing_Contact_With_Same_Email</targetReference>
+        </connector>
+        <filterLogic>and</filterLogic>
+        <filters>
+            <field>Email</field>
+            <operator>IsNull</operator>
+            <value>
+                <booleanValue>false</booleanValue>
+            </value>
+        </filters>
+        <object>Contact</object>
+        <recordTriggerType>Create</recordTriggerType>
+        <triggerType>RecordBeforeSave</triggerType>
+    </start>
+    <status>Draft</status>
     <variables>
         <name>Existing_Contact</name>
         <dataType>SObject</dataType>
