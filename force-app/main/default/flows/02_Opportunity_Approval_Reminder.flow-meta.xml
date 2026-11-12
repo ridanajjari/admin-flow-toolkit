@@ -6,7 +6,7 @@
     TYPE: Scheduled-Triggered Flow
 -->
 <Flow xmlns="http://soap.sforce.com/2006/04/metadata">
-    <apiVersion>59.0</apiVersion>
+    <apiVersion>68.0</apiVersion>
     <label>Opportunity — Pending Approval Reminder</label>
     <status>Active</status>
     <description>Sends a daily reminder email to Opportunity owners whose records have been pending approval for more than 48 hours.</description>

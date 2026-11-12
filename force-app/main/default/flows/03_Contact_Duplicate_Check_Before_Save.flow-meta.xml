@@ -7,7 +7,7 @@
     TYPE: Record-Triggered Flow (Before Save, Insert only)
 -->
 <Flow xmlns="http://soap.sforce.com/2006/04/metadata">
-    <apiVersion>59.0</apiVersion>
+    <apiVersion>68.0</apiVersion>
     <label>Contact — Duplicate Email Check Before Save</label>
     <status>Active</status>
     <description>Prevents saving a new Contact if another Contact with the same email address already exists in the org.</description>
