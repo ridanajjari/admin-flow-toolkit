@@ -1,39 +1,114 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!--
-    FLOW: Opportunity Approval Reminder
-    TRIGGER: Scheduled — runs daily
-    ACTION: Sends a reminder email for Opportunities stuck in pending approval > 48 hours
-    TYPE: Scheduled-Triggered Flow
--->
 <Flow xmlns="http://soap.sforce.com/2006/04/metadata">
+    <actionCalls>
+        <name>Notify_Admin_Of_Fault</name>
+        <label>Notify Admin Of Fault</label>
+        <locationX>440</locationX>
+        <locationY>400</locationY>
+        <actionName>emailSimple</actionName>
+        <actionType>emailSimple</actionType>
+        <flowTransactionModel>CurrentTransaction</flowTransactionModel>
+        <inputParameters>
+            <name>emailAddresses</name>
+            <value>
+                <elementReference>$Label.Flow_Fault_Notification_Email</elementReference>
+            </value>
+        </inputParameters>
+        <inputParameters>
+            <name>emailSubject</name>
+            <value>
+                <stringValue>Flow fault: Opportunity_Approval_Reminder</stringValue>
+            </value>
+        </inputParameters>
+        <inputParameters>
+            <name>emailBody</name>
+            <value>
+                <stringValue>Flow Opportunity_Approval_Reminder failed for record {!$Record.Id}.
+
+Fault message: {!$Flow.FaultMessage}</stringValue>
+            </value>
+        </inputParameters>
+        <nameSegment>emailSimple</nameSegment>
+    </actionCalls>
+    <actionCalls>
+        <name>Send_Reminder_Email</name>
+        <label>Send Reminder Email</label>
+        <locationX>176</locationX>
+        <locationY>300</locationY>
+        <actionName>emailSimple</actionName>
+        <actionType>emailSimple</actionType>
+        <faultConnector>
+            <targetReference>Notify_Admin_Of_Fault</targetReference>
+        </faultConnector>
+        <flowTransactionModel>CurrentTransaction</flowTransactionModel>
+        <inputParameters>
+            <name>emailAddresses</name>
+            <value>
+                <elementReference>$Record.Owner.Email</elementReference>
+            </value>
+        </inputParameters>
+        <inputParameters>
+            <name>emailSubject</name>
+            <value>
+                <stringValue>ACTION NEEDED — Opportunity Pending Approval: {!$Record.Name}</stringValue>
+            </value>
+        </inputParameters>
+        <inputParameters>
+            <name>emailBody</name>
+            <value>
+                <stringValue>Hi {!$Record.Owner.FirstName},
+
+Your opportunity has been pending approval for more than 48 hours.
+
+Opportunity  : {!$Record.Name}
+Amount       : {!$Record.Amount}
+Submitted on : {!$Record.Submitted_For_Approval_Date__c}
+
+Please follow up with your approver or resubmit if needed.
+
+This is an automated reminder from Salesforce.</stringValue>
+            </value>
+        </inputParameters>
+        <nameSegment>emailSimple</nameSegment>
+    </actionCalls>
     <apiVersion>68.0</apiVersion>
+    <areMetricsLoggedToDataCloud>false</areMetricsLoggedToDataCloud>
+    <decisions>
+        <name>Is_Pending_Over_48_Hours</name>
+        <label>Pending Over 48 Hours?</label>
+        <locationX>176</locationX>
+        <locationY>200</locationY>
+        <defaultConnectorLabel>Not Yet 48 Hours</defaultConnectorLabel>
+        <rules>
+            <name>Over_48_Hours</name>
+            <conditionLogic>and</conditionLogic>
+            <conditions>
+                <leftValueReference>$Record.Submitted_For_Approval_Date__c</leftValueReference>
+                <operator>LessThanOrEqualTo</operator>
+                <rightValue>
+                    <elementReference>Cutoff_48_Hours_Ago</elementReference>
+                </rightValue>
+            </conditions>
+            <connector>
+                <targetReference>Send_Reminder_Email</targetReference>
+            </connector>
+            <label>Over 48 hours</label>
+        </rules>
+    </decisions>
+    <description>Runs daily. For each open Opportunity with Approval_Status__c = Pending, emails the owner if Submitted_For_Approval_Date__c is at least 48 hours ago. The reminder repeats every day until the status changes. Faults are emailed to the address in the Flow_Fault_Notification_Email custom label.</description>
+    <environments>Default</environments>
+    <formulas>
+        <name>Cutoff_48_Hours_Ago</name>
+        <dataType>DateTime</dataType>
+        <expression>NOW() - 2</expression>
+    </formulas>
     <label>Opportunity — Pending Approval Reminder</label>
-    <status>Active</status>
-    <description>Sends a daily reminder email to Opportunity owners whose records have been pending approval for more than 48 hours.</description>
     <processType>AutoLaunchedFlow</processType>
-    <triggerType>Scheduled</triggerType>
-
     <start>
-        <locationX>176</locationX>
-        <locationY>48</locationY>
+        <locationX>50</locationX>
+        <locationY>0</locationY>
         <connector>
-            <targetReference>Get_Stale_Pending_Opportunities</targetReference>
-        </connector>
-        <schedule>
-            <frequency>Daily</frequency>
-            <startDate>2024-01-01</startDate>
-            <startTime>08:00:00.000Z</startTime>
-        </schedule>
-        <triggerType>Scheduled</triggerType>
-    </start>
-
-    <recordLookups>
-        <name>Get_Stale_Pending_Opportunities</name>
-        <label>Get Stale Pending Opportunities</label>
-        <locationX>176</locationX>
-        <locationY>168</locationY>
-        <connector>
-            <targetReference>Loop_Opportunities</targetReference>
+            <targetReference>Is_Pending_Over_48_Hours</targetReference>
         </connector>
         <filterLogic>and</filterLogic>
         <filters>
@@ -45,79 +120,25 @@
         </filters>
         <filters>
             <field>Submitted_For_Approval_Date__c</field>
-            <operator>LessThan</operator>
+            <operator>IsNull</operator>
             <value>
-                <elementReference>$Flow.CurrentDateTime</elementReference>
+                <booleanValue>false</booleanValue>
             </value>
         </filters>
-        <getFirstRecordOnly>false</getFirstRecordOnly>
+        <filters>
+            <field>IsClosed</field>
+            <operator>EqualTo</operator>
+            <value>
+                <booleanValue>false</booleanValue>
+            </value>
+        </filters>
         <object>Opportunity</object>
-        <outputReference>Pending_Opportunities</outputReference>
-        <queriedFields>Id</queriedFields>
-        <queriedFields>Name</queriedFields>
-        <queriedFields>OwnerId</queriedFields>
-        <queriedFields>Owner.Email</queriedFields>
-        <queriedFields>Owner.FirstName</queriedFields>
-        <queriedFields>Amount</queriedFields>
-    </recordLookups>
-
-    <loops>
-        <name>Loop_Opportunities</name>
-        <label>Loop Opportunities</label>
-        <locationX>176</locationX>
-        <locationY>288</locationY>
-        <collectionReference>Pending_Opportunities</collectionReference>
-        <iterationOrder>Asc</iterationOrder>
-        <nextValueConnector>
-            <targetReference>Send_Reminder_Email</targetReference>
-        </nextValueConnector>
-    </loops>
-
-    <actionCalls>
-        <name>Send_Reminder_Email</name>
-        <label>Send Reminder Email</label>
-        <locationX>440</locationX>
-        <locationY>288</locationY>
-        <actionName>emailSimple</actionName>
-        <actionType>emailSimple</actionType>
-        <connector>
-            <targetReference>Loop_Opportunities</targetReference>
-        </connector>
-        <inputParameters>
-            <name>emailAddresses</name>
-            <value>
-                <elementReference>Loop_Opportunities.CurrentItem.Owner.Email</elementReference>
-            </value>
-        </inputParameters>
-        <inputParameters>
-            <name>emailSubject</name>
-            <value>
-                <stringValue>ACTION NEEDED — Opportunity Pending Approval: {!Loop_Opportunities.CurrentItem.Name}</stringValue>
-            </value>
-        </inputParameters>
-        <inputParameters>
-            <name>emailBody</name>
-            <value>
-                <stringValue>Hi {!Loop_Opportunities.CurrentItem.Owner.FirstName},
-
-Your opportunity has been pending approval for more than 48 hours.
-
-Opportunity : {!Loop_Opportunities.CurrentItem.Name}
-Amount      : {!Loop_Opportunities.CurrentItem.Amount}
-
-Please follow up with your approver or resubmit if needed.
-
-This is an automated reminder from Salesforce.</stringValue>
-            </value>
-        </inputParameters>
-    </actionCalls>
-
-    <variables>
-        <name>Pending_Opportunities</name>
-        <dataType>SObject</dataType>
-        <isCollection>true</isCollection>
-        <isInput>false</isInput>
-        <isOutput>false</isOutput>
-        <objectType>Opportunity</objectType>
-    </variables>
+        <schedule>
+            <frequency>Daily</frequency>
+            <startDate>2026-11-13</startDate>
+            <startTime>08:00:00.000Z</startTime>
+        </schedule>
+        <triggerType>Scheduled</triggerType>
+    </start>
+    <status>Draft</status>
 </Flow>
