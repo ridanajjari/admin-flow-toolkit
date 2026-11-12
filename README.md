@@ -54,7 +54,7 @@ Every Salesforce org needs the same basic automations: welcome emails, approval 
 ## Deployment
 
 ```bash
-git clone https://github.com/YOUR_USERNAME/admin-flow-toolkit.git
+git clone https://github.com/ridanajjari/admin-flow-toolkit.git
 cd admin-flow-toolkit
 
 # Option 1 — Deploy via SFDX
